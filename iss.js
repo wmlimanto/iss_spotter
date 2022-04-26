@@ -37,6 +37,7 @@ const fetchCoordsByIP = function(ip, callback) {
       callback(Error(msg), null);
       return;
     }
+    // fetch coordinates
     const data = JSON.parse(body);
     const coordinates = {latitude: data['latitude'], longitude: data['longitude']};
     callback(null, coordinates);
@@ -56,10 +57,38 @@ const fetchISSFlyOverTimes = function(coordinates, callback) {
       callback(Error(msg), null);
       return;
     }
+    // fetch pass times
     const data = JSON.parse(body);
     const passTimes = data.response;
     callback(null, passTimes);
   })
-}
+};
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
+
+// chains all three API requests above to trigger one after another
+const nextISSTimesForMyLocation = function(callback) {
+  fetchMyIP((error, ip) => {
+    if (error) {
+      callback(error, null);
+      return;
+    }
+
+    fetchCoordsByIP(ip, (error, coordinates) => {
+      if (error) {
+        callback(erorr, null);
+        return;
+      }
+
+      fetchISSFlyOverTimes(coordinates, (error, passTimes) => {
+        if (error) {
+          callback(error, null);
+          return;
+        }
+
+        callback(null, passTimes);
+      });
+    });
+  });
+};
+
+module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes, nextISSTimesForMyLocation };
